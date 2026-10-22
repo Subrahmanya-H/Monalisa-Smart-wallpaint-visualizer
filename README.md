@@ -74,6 +74,7 @@ The login session is a JWT in an HTTP-only cookie. The API health endpoint is `G
 ### Production deployment
 
 The included [`render.yaml`](./render.yaml) configures one Render web service to build the Angular frontend and serve it alongside the Express API from the same HTTPS origin.
+The Angular CLI places `index.html` and browser assets in `dist/smt-wall-paint-vis/browser`; the production API serves the app from that directory.
 
 1. Push this repository to GitHub, sign in to Render, choose **New → Blueprint**, and select this GitHub repository. Render reads `render.yaml` and provisions the web service.
 2. When prompted, provide `MONGO_URI` using a MongoDB Atlas connection string. In Atlas, create a database user with a strong password and configure network access for the Render service. Keep the URI private.
