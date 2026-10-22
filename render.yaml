@@ -3,7 +3,7 @@ services:
     name: monalisa-smart-wall-paint-visualizer
     runtime: node
     plan: free
-    buildCommand: npm install && npm --prefix Backend install && npm run build
+    buildCommand: npm ci --include=dev && npm --prefix Backend ci --omit=dev && npm run build
     startCommand: npm --prefix Backend start
     healthCheckPath: /api/health
     envVars:
