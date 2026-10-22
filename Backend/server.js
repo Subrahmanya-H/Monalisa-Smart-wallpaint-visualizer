@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const path = require('node:path');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -34,6 +35,18 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/themes', require('./routes/themeRoutes'));
 app.use('/api/projects', require('./routes/projectroutes'));
 app.use('/api/uploads', require('./routes/uploadRoutes'));
+
+if (process.env.NODE_ENV === 'production') {
+  const frontendDirectory = path.resolve(__dirname, '..', 'dist', 'smt-wall-paint-vis');
+  app.use(express.static(frontendDirectory));
+  app.get(/^(?!\/api(?:\/|$)).*/i, (req, res, next) => {
+    res.sendFile(path.join(frontendDirectory, 'index.html'), (error) => {
+      if (error) {
+        next(error);
+      }
+    });
+  });
+}
 
 app.use((error, req, res, next) => {
   if (res.headersSent) {

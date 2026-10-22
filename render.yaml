@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: monalisa-smart-wall-paint-visualizer
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm --prefix Backend ci && npm run build
+    startCommand: npm --prefix Backend start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_REGISTRATION_KEY
+        generateValue: true
+      - key: MONGO_URI
+        sync: false

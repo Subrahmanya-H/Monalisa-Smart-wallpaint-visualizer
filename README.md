@@ -73,11 +73,15 @@ The login session is a JWT in an HTTP-only cookie. The API health endpoint is `G
 
 ### Production deployment
 
-1. Build the frontend from the project root with `npm ci` and `npm run build`. The static production files are written to `dist/smt-wall-paint-vis`.
-2. Deploy the `Backend` folder as a Node.js service using `npm ci` followed by `npm start`. Configure `MONGO_URI`, `JWT_SECRET` (at least 32 characters), `ADMIN_REGISTRATION_KEY`, `CLIENT_ORIGIN` (the exact HTTPS frontend origin), `NODE_ENV=production`, and the hosting provider's `PORT`. Configure MongoDB to accept connections from the API host.
-3. Serve the Angular build over HTTPS and configure the frontend host or a reverse proxy to forward `/api` requests to the API service. The app uses same-origin `/api` paths and credentialed HTTP-only cookies; forwarding the API path through the frontend origin keeps the browser session same-site.
-4. Set the optional Cloudinary environment variables on the API service if uploaded room and theme images should use Cloudinary. Never put API secrets in frontend build variables.
-5. Confirm `https://<your-domain>/api/health` returns `{"status":"ok","database":"monalisa_paints"}`, then test customer registration, login, project saving, and admin setup on the deployed site.
+The included [`render.yaml`](./render.yaml) configures one Render web service to build the Angular frontend and serve it alongside the Express API from the same HTTPS origin.
+
+1. Push this repository to GitHub, sign in to Render, choose **New → Blueprint**, and select this GitHub repository. Render reads `render.yaml` and provisions the web service.
+2. When prompted, provide `MONGO_URI` using a MongoDB Atlas connection string. In Atlas, create a database user with a strong password and configure network access for the Render service. Keep the URI private.
+3. Render generates `JWT_SECRET` and `ADMIN_REGISTRATION_KEY`. Store the admin registration key securely; it is required to create the first administrator at `/admin-register`. Do not add secrets to GitHub or the frontend.
+4. After deployment, open the service's HTTPS URL. Confirm `/api/health` returns `{"status":"ok","database":"monalisa_paints"}`, then test registration, login, project saving, and administrator setup. The same-origin frontend and API use the secure HTTP-only authentication cookie.
+5. Optionally add `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the Render service environment to enable Cloudinary uploads. Redeploy after changing environment settings.
+
+The free Render service may sleep when idle and take a short time to wake up. Set `CLIENT_ORIGIN` to the service's exact HTTPS origin if you later host the frontend separately; the included single-service setup does not need a separate frontend host or API proxy.
 
 Use HTTPS in production. The API marks the authentication cookie secure when `NODE_ENV=production`. The MongoDB Node driver uses its standard pool defaults for this small demo; monitor Atlas/server connection usage and request latency before tuning pool settings for a larger deployment.
 
@@ -95,13 +99,13 @@ Project images are rendered as 1200×600 JPEG data URLs and stored with project 
 
 ## Development server
 
-To start a local development server, run:
+To start the Angular development server, run the API as described in [Local full-stack setup](#local-full-stack-setup), then run this command from the project root:
 
 ```bash
-ng serve
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4200/`. The development server automatically reloads when source files change.
 
 ## Code scaffolding
 
@@ -125,8 +129,6 @@ To build the project run:
 npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
 ## Running unit tests
 
 To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
@@ -134,16 +136,6 @@ To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use th
 ```bash
 npm test -- --watch=false
 ```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
 
 ## Additional resources
 
