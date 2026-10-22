@@ -1,0 +1,27 @@
+<header>
+  <nav aria-label="Main navigation">
+    <ul class="nav-links">
+      <li><a routerLink="/">Home</a></li>
+      <li><a routerLink="/about">About</a></li>
+      <li><a routerLink="/contact">Contact</a></li>
+    </ul>
+
+    <a class="navmid-logo" routerLink="/" aria-label="Monalisa Smart Wall Paint Visualizer home">
+      <img src="/assets/logo.png" alt="">
+      <span>Monalisa Smart Wall Paint Visualizer</span>
+    </a>
+
+    <ul class="login-register">
+      @if (auth.currentUser(); as user) {
+        @if (user.role === 'admin') {
+          <li><a routerLink="/admin">Admin dashboard</a></li>
+        }
+        <li><span class="user-label">{{ user.name }}</span></li>
+        <li><button type="button" class="nav-button" (click)="logout()">Sign out</button></li>
+      } @else {
+        <li><a routerLink="/login">Login</a></li>
+        <li><a routerLink="/register">Register</a></li>
+      }
+    </ul>
+  </nav>
+</header>

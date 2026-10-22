@@ -1,0 +1,201 @@
+<main class="admin-page">
+  <header class="admin-heading">
+    <div>
+      <p class="eyebrow">MONALISA PAINTS · ADMINISTRATION</p>
+      <h1>Dashboard</h1>
+      <p>Manage customer accounts, room projects, and the visualizer's design themes.</p>
+    </div>
+    <a routerLink="/" class="back-link">Back to visualizer</a>
+  </header>
+
+  <section class="dashboard-stats" aria-label="Dashboard overview">
+    <article><span>Accounts</span><strong>{{ users.length }}</strong></article>
+    <article><span>Customer projects</span><strong>{{ projects.length }}</strong></article>
+    <article><span>Available themes</span><strong>{{ activeThemeCount() }}</strong></article>
+  </section>
+
+  <nav class="dashboard-tabs" aria-label="Admin dashboard sections">
+    <button type="button" [class.active]="activeTab === 'users'" (click)="setTab('users')">
+      Users <span>{{ users.length }}</span>
+    </button>
+    <button type="button" [class.active]="activeTab === 'projects'" (click)="setTab('projects')">
+      Customer projects <span>{{ projects.length }}</span>
+    </button>
+    <button type="button" [class.active]="activeTab === 'themes'" (click)="setTab('themes')">
+      Themes <span>{{ themes.length }}</span>
+    </button>
+  </nav>
+
+  @if (errorMessage) {
+    <p class="dashboard-message error-message" role="alert">{{ errorMessage }}</p>
+  }
+  @if (statusMessage) {
+    <p class="dashboard-message success-message" role="status">{{ statusMessage }}</p>
+  }
+  @if (isLoading) {
+    <p class="dashboard-message">Loading dashboard…</p>
+  }
+
+  @if (activeTab === 'users') {
+    <section class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Users</h2>
+          <p>Registered customer and administrator accounts.</p>
+        </div>
+        <input type="search" [(ngModel)]="userSearch" placeholder="Search users" aria-label="Search users">
+      </div>
+      @if (filteredUsers.length === 0) {
+        <p class="empty-state">No matching accounts.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+            <tbody>
+              @for (user of filteredUsers; track user.id) {
+                <tr>
+                  <td>{{ user.name }}</td>
+                  <td>{{ user.email }}</td>
+                  <td><span class="role-badge" [class.admin-role]="user.role === 'admin'">{{ user.role }}</span></td>
+                  <td>{{ user.createdAt | date:'mediumDate' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  @if (activeTab === 'projects') {
+    <section class="dashboard-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Customer projects</h2>
+          <p>Preview recent saved designs and see which customer created them.</p>
+        </div>
+        <input type="search" [(ngModel)]="projectSearch" placeholder="Search projects or customers" aria-label="Search projects">
+      </div>
+      @if (filteredProjects.length === 0) {
+        <p class="empty-state">No saved projects yet.</p>
+      } @else {
+        <div class="admin-project-grid">
+          @for (project of filteredProjects; track project.id) {
+            <article class="admin-project-card">
+              <img [src]="project.thumbnailUrl" [alt]="'Preview of ' + project.projectName">
+              <div class="admin-project-info">
+                <h3>{{ project.projectName }}</h3>
+                <p>{{ project.ownerName }}<br>{{ project.ownerEmail }}</p>
+                <div class="project-meta">
+                  <span>{{ project.polygonCount }} areas</span>
+                  <span>{{ project.updatedAt | date:'mediumDate' }}</span>
+                </div>
+                <button type="button" class="danger-button" (click)="deleteProject(project)">Delete project</button>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (activeTab === 'themes') {
+    <section class="theme-workspace">
+      <form class="theme-editor dashboard-panel" (ngSubmit)="saveTheme()">
+        <div class="panel-heading">
+          <div>
+            <h2>{{ editingThemeId ? 'Edit theme' : 'Create a theme' }}</h2>
+            <p>Create an original visual style for customers to try on a wall.</p>
+          </div>
+          @if (editingThemeId) {
+            <button type="button" class="quiet-button" (click)="cancelThemeEdit()">Cancel edit</button>
+          }
+        </div>
+
+        <label for="theme-name">Theme name</label>
+        <input id="theme-name" name="themeName" [(ngModel)]="themeForm.name" maxlength="60" required>
+
+        <label for="theme-description">Description</label>
+        <textarea id="theme-description" name="themeDescription" [(ngModel)]="themeForm.description" maxlength="180" rows="2" required></textarea>
+
+        <label for="theme-motif">Visual motif</label>
+        <select id="theme-motif" name="themeMotif" [(ngModel)]="themeForm.motif">
+          @for (motif of motifs; track motif.id) {
+            <option [ngValue]="motif.id">{{ motif.name }}</option>
+          }
+        </select>
+
+        <div class="color-fields">
+          <label>Wall color
+            <input type="color" name="baseColor" [(ngModel)]="themeForm.baseColor">
+          </label>
+          <label>Pattern accent
+            <input type="color" name="accentColor" [(ngModel)]="themeForm.accentColor">
+          </label>
+        </div>
+
+        <label for="theme-artwork">Optional inspiration image (JPEG, PNG, WebP; max 5 MB)</label>
+        <div class="upload-row">
+          <input id="theme-artwork" type="file" accept="image/jpeg,image/png,image/webp" (change)="onThemeImageChange($event)">
+          <button type="button" class="quiet-button" [disabled]="!selectedImageFile || isUploadingThemeImage" (click)="uploadThemeImage()">
+            {{ isUploadingThemeImage ? 'Uploading…' : 'Upload image' }}
+          </button>
+        </div>
+        @if (themeForm.imageUrl) {
+          <p class="image-ready">Theme inspiration image attached.</p>
+        }
+        <label class="active-toggle">
+          <input type="checkbox" name="themeActive" [(ngModel)]="themeForm.isActive">
+          Show this theme in the customer visualizer
+        </label>
+
+        <div class="editor-actions">
+          <button type="submit" class="primary-button" [disabled]="isSavingTheme || isUploadingThemeImage">
+            {{ isSavingTheme ? 'Saving…' : (editingThemeId ? 'Save changes' : 'Create theme') }}
+          </button>
+          @if (!editingThemeId) {
+            <button type="button" class="quiet-button" (click)="clearThemeForm()">
+              Clear form
+            </button>
+          }
+        </div>
+        <p class="editor-note">Motif previews are original canvas patterns. Avoid uploading art you do not own or have permission to use.</p>
+      </form>
+
+      <section class="dashboard-panel theme-list-panel">
+        <div class="panel-heading">
+          <div><h2>Theme library</h2><p>{{ themes.length }} themes · {{ activeThemeCount() }} currently visible to customers</p></div>
+        </div>
+        @if (themes.length === 0) {
+          <p class="empty-state">Themes will appear here after the API seeds its built-in set.</p>
+        } @else {
+          <div class="theme-list">
+            @for (theme of themes; track theme.id) {
+              <article class="theme-row">
+                <div class="theme-swatch" [style.background]="theme.baseColor">
+                  <span [style.background]="theme.accentColor"></span>
+                </div>
+                <div class="theme-row-copy">
+                  <div class="theme-title-line">
+                    <h3>{{ theme.name }}</h3>
+                    @if (theme.isBuiltIn) { <span class="built-in-badge">Built-in</span> }
+                    <span class="availability-badge" [class.hidden-theme]="!theme.isActive">{{ theme.isActive ? 'Visible' : 'Hidden' }}</span>
+                  </div>
+                  <p>{{ theme.description }}</p>
+                  <small>{{ theme.motif }} · {{ theme.slug }}</small>
+                </div>
+                <div class="theme-row-actions">
+                  <button type="button" class="quiet-button" (click)="editTheme(theme)">Edit</button>
+                  <button type="button" class="quiet-button" (click)="toggleTheme(theme)">{{ theme.isActive ? 'Hide' : 'Show' }}</button>
+                  @if (!theme.isBuiltIn) {
+                    <button type="button" class="danger-button" (click)="deleteTheme(theme)">Delete</button>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    </section>
+  }
+</main>

@@ -1,0 +1,32 @@
+<main class="auth-page">
+  <section class="auth-card">
+    <p class="eyebrow">MONALISA PAINTS</p>
+    <h1>{{ isAdminRegistration ? 'Administrator setup' : 'Create your account' }}</h1>
+    <p class="auth-intro">
+      {{ isAdminRegistration ? 'Register an administrator account to manage the customer list.' : 'Create a customer account to save and explore paint designs.' }}
+    </p>
+    @if (isAdminRegistration) {
+      <p class="admin-note">This route requires the administrator registration key configured on the API server.</p>
+    }
+    @if (errorMessage) {
+      <p class="form-message error-message" role="alert">{{ errorMessage }}</p>
+    }
+    <form (ngSubmit)="submit()">
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" [(ngModel)]="name" autocomplete="name" minlength="2" maxlength="80" required>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="email" required>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="new-password" minlength="8" required>
+      <small>At least 8 characters, including uppercase, lowercase, and a number.</small>
+      @if (isAdminRegistration) {
+        <label for="adminKey">Administrator registration key</label>
+        <input id="adminKey" name="adminKey" type="password" [(ngModel)]="adminKey" autocomplete="off" required>
+      }
+      <button type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Creating account…' : (isAdminRegistration ? 'Create administrator' : 'Create customer account') }}
+      </button>
+    </form>
+    <p class="auth-switch">Already registered? <a routerLink="/login">Sign in</a></p>
+  </section>
+</main>

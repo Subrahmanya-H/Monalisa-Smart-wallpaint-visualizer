@@ -1,0 +1,20 @@
+<main class="auth-page">
+  <section class="auth-card">
+    <p class="eyebrow">MONALISA PAINTS</p>
+    <h1>Welcome back</h1>
+    <p class="auth-intro">Sign in to continue designing your space.</p>
+    @if (errorMessage) {
+      <p class="form-message error-message" role="alert">{{ errorMessage }}</p>
+    }
+    <form (ngSubmit)="submit()">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="email" required>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" required>
+      <button type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+    <p class="auth-switch">New to Monalisa Paints? <a routerLink="/register">Create a customer account</a></p>
+  </section>
+</main>

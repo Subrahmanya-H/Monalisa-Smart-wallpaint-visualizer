@@ -1,0 +1,468 @@
+<main class="visualizer">
+  @if (showHalloweenBanner) {
+    <section class="halloween-welcome" aria-label="Halloween greeting">
+      <span class="halloween-icon" aria-hidden="true">✦</span>
+      <div>
+        <p class="halloween-kicker">A little seasonal inspiration</p>
+        <h1>Happy Halloween!</h1>
+        <p>Make room for a little mystery, warmth, and a fresh wall-color idea.</p>
+      </div>
+      <span class="halloween-icon" aria-hidden="true">✦</span>
+    </section>
+  }
+
+  <section class="welcome-panel" aria-labelledby="welcome-title">
+    <div class="welcome-brand">
+      <img src="/assets/logo.png" alt="Monalisa Paints logo">
+      <div>
+        <p class="eyebrow">A CREATIVE SPACE BY MONALISA PAINTS</p>
+        <h1 id="welcome-title">Welcome to Monalisa Paints</h1>
+        <p class="welcome-copy">
+          Inspired by the Mona Lisa's place in art history, this project invites you to explore
+          color in your own space. This is a wall-paint visualizer, not a wall-poster maker:
+          outline a real wall in your room photo, then preview paint colors, finishes, and
+          decorative wall treatments directly on that surface.
+        </p>
+      </div>
+    </div>
+    <section class="monalisa-story" aria-labelledby="monalisa-story-title">
+      <h2 id="monalisa-story-title">The Mona Lisa: art, history, and inspiration</h2>
+      <p>
+        Leonardo da Vinci began the portrait around 1503, and it is widely believed to depict
+        Lisa Gherardini. Its soft sfumato shading gives the painting its distinctive
+        atmosphere. After Leonardo's death, it entered the French royal collection and is now
+        at the Louvre; its 1911 theft and recovery in 1914 helped make it a worldwide icon.
+        That history of art and imagination inspired the name of this color-visualization
+        project.
+      </p>
+      <p class="name-note">
+        The woman nicknamed “Monalisa” in reports from the 2025 Kumbh Mela is a separate
+        contemporary person; the shared name is a nickname, not a connection to Leonardo's
+        portrait.
+      </p>
+    </section>
+    <p class="welcome-note">
+      Your preview is a guide—room lighting, wall texture, and screen settings can change how
+      paint looks in real life.
+    </p>
+  </section>
+
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">SMART WALL PAINT</p>
+      <h1>Wall visualizer</h1>
+      <p class="intro">Upload a room photo, outline the areas you want to paint, and try a color.</p>
+    </div>
+    <button type="button" class="help-button" aria-haspopup="dialog" (click)="openHelp()">
+      <span aria-hidden="true">❓</span> Help
+    </button>
+  </header>
+
+  @if (isHelpOpen) {
+    <div class="help-backdrop" (click)="closeHelp()">
+      <section
+        class="help-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-title"
+        aria-describedby="help-intro"
+        (click)="$event.stopPropagation()">
+        <button type="button" class="help-close" aria-label="Close help" (click)="closeHelp()">×</button>
+        <p class="eyebrow">QUICK GUIDE</p>
+        <h2 id="help-title">How to use the visualizer</h2>
+        <p id="help-intro" class="help-notice">If anything feels confusing, just follow these steps:</p>
+        <ol class="help-steps">
+          <li><strong>Login or register</strong><span>Sign in to save your designs; you can explore the canvas without an account.</span></li>
+          <li><strong>Upload a room image</strong><span>Choose a clear photo of your room.</span></li>
+          <li><strong>Create a polygon</strong><span>Select Create polygon, click around a wall's corners, then choose Finish polygon.</span></li>
+          <li><strong>Choose a colour</strong><span>Pick a paint colour from the picker or palette.</span></li>
+          <li><strong>Choose a finish or theme</strong><span>Select matte, satin, glossy, textured, or a wall design.</span></li>
+          <li><strong>Apply your design</strong><span>Select the wall area and apply the colour or theme. Use Adjust corners to correct the outline.</span></li>
+          <li><strong>Save your project</strong><span>Sign in, enter a project name, and save it to your account.</span></li>
+          <li><strong>Download the result</strong><span>Download an image of your finished preview.</span></li>
+        </ol>
+        <button type="button" class="primary-button help-done" (click)="closeHelp()">Got it</button>
+      </section>
+    </div>
+  }
+
+  <section class="workspace" aria-label="Wall paint workspace">
+    <aside class="tools-panel" aria-label="Visualizer tools">
+      <section class="panel-section upload-section">
+        <h2>Room photo</h2>
+        <label class="file-picker">
+          <span>Choose an image</span>
+          <input type="file" accept="image/*" (change)="onImageUpload($event)">
+        </label>
+        <p class="hint">Use a clear, well-lit photo for the best results.</p>
+        @if (auth.currentUser() && selectedImageFile) {
+          <button
+            type="button"
+            class="secondary-button cloud-upload-button"
+            [disabled]="isCloudUploadBusy"
+            (click)="uploadImageToCloudinary()">
+            {{ isCloudUploadBusy ? 'Uploading…' : 'Upload image to Cloudinary' }}
+          </button>
+        }
+        @if (cloudUploadMessage) {
+          <p class="hint" role="status">{{ cloudUploadMessage }}</p>
+        }
+        @if (cloudImageUrl) {
+          <a class="cloud-image-link" [href]="cloudImageUrl" target="_blank" rel="noopener noreferrer">
+            View cloud image
+          </a>
+        }
+      </section>
+
+      <section class="panel-section">
+        <h2>Tools</h2>
+        <div class="tool-buttons">
+          <button
+            type="button"
+            class="tool-button polygon-button"
+            [class.active]="currentTool === 'polygon'"
+            [attr.aria-pressed]="currentTool === 'polygon'"
+            (click)="startPolygon()">
+            <span class="tool-icon" aria-hidden="true">◇</span>
+            Create polygon
+          </button>
+          <button
+            type="button"
+            class="tool-button"
+            [class.active]="currentTool === 'brush'"
+            [attr.aria-pressed]="currentTool === 'brush'"
+            (click)="setTool('brush')">
+            <span class="tool-icon" aria-hidden="true">✎</span>
+            Brush
+          </button>
+          <button
+            type="button"
+            class="tool-button"
+            [class.active]="currentTool === 'eraser'"
+            [attr.aria-pressed]="currentTool === 'eraser'"
+            (click)="setTool('eraser')">
+            <span class="tool-icon" aria-hidden="true">⌫</span>
+            Eraser
+          </button>
+        </div>
+
+        @if (currentTool === 'polygon') {
+          <div class="polygon-actions">
+            <p class="hint">
+              Click the wall corners in order. Add at least 3 points, then finish.
+              <span class="point-count">{{ draftPoints.length }} points</span>
+            </p>
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="draftPoints.length < 3"
+              (click)="finishPolygon()">
+              Finish polygon
+            </button>
+            @if (draftPoints.length > 0) {
+              <button type="button" class="text-button" (click)="cancelPolygon()">
+                Cancel polygon
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="panel-section">
+        <h2>Paint color</h2>
+        <label class="color-control">
+          <input
+            type="color"
+            aria-label="Choose paint color"
+            [(ngModel)]="selectedColor">
+          <span>{{ selectedColor }}</span>
+        </label>
+        @if (selectedPolygon) {
+          <button type="button" class="primary-button apply-button" (click)="applyPolygonColor()">
+            Apply to {{ selectedPolygon.name }}
+          </button>
+        } @else {
+          <p class="hint">Create a polygon to apply color to a specific area.</p>
+        }
+      </section>
+
+      <section class="panel-section current-polygon-section">
+        <h2>Current polygon</h2>
+        @if (polygons.length > 0) {
+          <select
+            aria-label="Select current polygon"
+            [ngModel]="selectedPolygonIndex"
+            (ngModelChange)="selectPolygon($event)">
+            @for (polygon of polygons; track $index) {
+              <option [ngValue]="$index">{{ polygon.name }}</option>
+            }
+          </select>
+          <p class="hint">{{ polygons.length }} saved {{ polygons.length === 1 ? 'area' : 'areas' }}</p>
+          <div class="polygon-edit-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              [class.active]="isEditingPolygon"
+              [attr.aria-pressed]="isEditingPolygon"
+              (click)="togglePolygonEditing()">
+              {{ isEditingPolygon ? 'Done adjusting corners' : 'Adjust corners' }}
+            </button>
+            @if (selectedPolygon) {
+              <button
+                type="button"
+                class="text-button delete-button"
+                (click)="deleteSelectedPolygon()">
+                Delete selected polygon
+              </button>
+            }
+          </div>
+          @if (isEditingPolygon) {
+            <p class="hint">Drag a numbered corner on the canvas to correct its position.</p>
+          }
+        } @else {
+          <p class="hint">No saved polygons yet.</p>
+        }
+      </section>
+
+      <section class="panel-section panel-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="!canUndo"
+          (click)="undo()">
+          Undo <span class="shortcut-hint">Ctrl+Z</span>
+        </button>
+        <button type="button" class="secondary-button" (click)="resetCanvas()">Reset</button>
+        <button type="button" class="primary-button" (click)="downloadCanvas()">Download</button>
+      </section>
+    </aside>
+
+    <section class="canvas-panel" aria-label="Room canvas">
+      <div class="canvas-heading">
+        <div>
+          <h2>Canvas</h2>
+          <p class="hint">{{ canvasMessage }}</p>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas
+          #wallCanvas
+          width="1200"
+          height="600"
+          [class.polygon-cursor]="currentTool === 'polygon'"
+          [class.brush-cursor]="currentTool === 'brush'"
+          [class.eraser-cursor]="currentTool === 'eraser'"
+          (pointerdown)="onCanvasPointerDown($event)"
+          (pointermove)="onCanvasPointerMove($event)"
+          (pointerup)="stopDrawing()"
+          (pointercancel)="stopDrawing()"
+          (pointerleave)="onCanvasPointerLeave()">
+        </canvas>
+        @if (showBeforeAfter && originalImageUrl) {
+          <img
+            class="before-image"
+            [src]="originalImageUrl"
+            alt="Original room photo before paint"
+            [style.clip-path]="'inset(0 ' + (100 - comparisonPosition) + '% 0 0)'">
+          <span class="comparison-divider" [style.left.%]="comparisonPosition" aria-hidden="true"></span>
+          <span class="comparison-label before-label">Before</span>
+          <span class="comparison-label after-label">After</span>
+        }
+      </div>
+      <section class="save-project-section" aria-label="Save current design">
+        <div class="save-project-copy">
+          <h2>Save this project</h2>
+          <p class="hint">Save the room preview, selected colors, finishes, and wall designs to your account.</p>
+        </div>
+        @if (auth.currentUser()) {
+          <form class="save-project-form" (ngSubmit)="saveProject()">
+            <input
+              type="text"
+              name="projectName"
+              [(ngModel)]="projectName"
+              maxlength="80"
+              placeholder="e.g. Living room refresh"
+              aria-label="Project name">
+            <button type="submit" class="primary-button" [disabled]="isSavingProject">
+              {{ isSavingProject ? 'Saving…' : 'Save project' }}
+            </button>
+          </form>
+        } @else {
+          <a class="primary-button sign-in-save-link" routerLink="/login">Sign in to save</a>
+        }
+        @if (projectMessage) {
+          <p class="project-message" role="status">{{ projectMessage }}</p>
+        }
+      </section>
+      <section class="design-palette" aria-label="Paint colors and finishes">
+        <div class="palette-heading">
+          <div>
+            <h2>Color palette</h2>
+            <p class="hint">
+              @if (selectedPolygon) {
+                Choose a swatch to apply it to {{ selectedPolygon.name }}.
+              } @else {
+                Choose a color, then create or select a polygon to apply it.
+              }
+            </p>
+          </div>
+          <span class="selected-color-chip">
+            <span class="selected-color-dot" [style.background]="selectedColor"></span>
+            {{ selectedColor }}
+          </span>
+        </div>
+        <div class="color-swatches">
+          @for (color of colorPalette; track color.value) {
+            <button
+              type="button"
+              class="color-swatch"
+              [class.selected]="selectedColor === color.value"
+              [style.--swatch-color]="color.value"
+              [attr.aria-label]="'Apply ' + color.name"
+              [attr.aria-pressed]="selectedColor === color.value"
+              [title]="color.name"
+              (click)="applyPaletteColor(color.value)">
+            </button>
+          }
+        </div>
+
+        <div class="finish-heading">
+          <h2>Paint finish</h2>
+          <span class="hint">{{ selectedPolygon ? selectedPolygon.finish : 'Select a polygon first' }}</span>
+        </div>
+        <div class="finish-options">
+          @for (finish of finishes; track finish.id) {
+            <button
+              type="button"
+              class="finish-option"
+              [class.selected]="selectedPolygon?.finish === finish.id"
+              [attr.aria-pressed]="selectedPolygon?.finish === finish.id"
+              [disabled]="!selectedPolygon"
+              (click)="applyFinish(finish.id)">
+              <span
+                class="finish-preview"
+                [class.matte]="finish.id === 'matte'"
+                [class.satin]="finish.id === 'satin'"
+                [class.glossy]="finish.id === 'glossy'"
+                [class.textured]="finish.id === 'textured'">
+              </span>
+              <span class="finish-copy">
+                <strong>{{ finish.name }}</strong>
+                <small>{{ finish.description }}</small>
+              </span>
+            </button>
+          }
+        </div>
+
+        <div class="design-heading">
+          <h2>Wall designs</h2>
+          <span class="hint">{{ selectedPolygon ? selectedPolygon.name : 'Choose before drawing or select an area' }}</span>
+        </div>
+        <div class="design-options">
+          @for (design of designs; track design.slug) {
+            <button
+              type="button"
+              class="design-option"
+              [class.selected]="selectedDesign === design.slug"
+              [attr.aria-pressed]="selectedDesign === design.slug"
+              (click)="applyDesign(design.slug)">
+              <span
+                class="design-preview"
+                [class.solid-design]="design.motif === 'solid'"
+                [class.geometric-design]="design.motif === 'geometric'"
+                [class.botanical-design]="design.motif === 'botanical'"
+                [class.halloween-design]="design.motif === 'halloween'"
+                [class.vintage-design]="design.motif === 'vintage'"
+                [class.graffiti-design]="design.motif === 'graffiti'"
+                [class.gallery-design]="design.motif === 'gallery'"
+                [style.background-color]="design.baseColor"
+                [style.--theme-accent]="design.accentColor">
+                @if (design.imageUrl) {
+                  <img [src]="design.imageUrl" alt="">
+                }
+              </span>
+              <span class="finish-copy">
+                <strong>{{ design.name }}</strong>
+                <small>{{ design.description }}</small>
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+      <section class="saved-projects-section" aria-label="My saved projects">
+        <div class="saved-projects-heading">
+          <div>
+            <h2>My projects</h2>
+            <p class="hint">Your saved room designs, ready to reopen.</p>
+          </div>
+          @if (auth.currentUser()) {
+            <span class="project-count">{{ savedProjects.length }} saved</span>
+          }
+        </div>
+        @if (!auth.currentUser()) {
+          <p class="empty-projects">Sign in to see and manage your saved projects.</p>
+        } @else if (isLoadingProjects) {
+          <p class="empty-projects">Loading your projects…</p>
+        } @else if (savedProjects.length === 0) {
+          <p class="empty-projects">No projects yet. Save your first room design to see it here.</p>
+        } @else {
+          <div class="saved-project-grid">
+            @for (project of savedProjects; track project.id) {
+              <article class="saved-project-card">
+                <button
+                  type="button"
+                  class="project-preview-button"
+                  [attr.aria-label]="'Open ' + project.projectName"
+                  [disabled]="loadingProjectId === project.id"
+                  (click)="loadProject(project)">
+                  <img [src]="project.thumbnailUrl" [alt]="'Preview of ' + project.projectName">
+                </button>
+                <div class="saved-project-info">
+                  <div>
+                    <h3>{{ project.projectName }}</h3>
+                    <p>{{ project.updatedAt | date:'mediumDate' }} · {{ project.polygonCount }} areas</p>
+                  </div>
+                  <div class="saved-project-actions">
+                    <button
+                      type="button"
+                      class="project-open-button"
+                      [disabled]="loadingProjectId === project.id"
+                      (click)="loadProject(project)">
+                      {{ loadingProjectId === project.id ? 'Opening…' : 'Open' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="project-delete-button"
+                      [attr.aria-label]="'Delete ' + project.projectName"
+                      (click)="deleteProject(project)">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+      @if (originalImageUrl) {
+        <label class="comparison-control" for="comparison-position">
+          Before / after preview
+          <input
+            id="comparison-position"
+            type="range"
+            min="5"
+            max="95"
+            step="1"
+            [(ngModel)]="comparisonPosition"
+            [disabled]="!showBeforeAfter">
+          <span class="comparison-switch">
+            <input type="checkbox" [(ngModel)]="showBeforeAfter" aria-label="Show before and after comparison">
+            Show comparison
+          </span>
+        </label>
+      }
+      <p class="canvas-tip">Tip: zoom in on your browser for more precise corner placement.</p>
+    </section>
+  </section>
+
+</main>
